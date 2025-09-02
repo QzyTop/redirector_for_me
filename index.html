@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Redirect…</title>
+
+  <style>
+    html,body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .wrap { display:flex; align-items:center; justify-content:center; height:100%; }
+    .card { padding:16px 20px; border-radius:16px; box-shadow:0 6px 20px rgba(0,0,0,.12); }
+    .muted { opacity:.7; font-size:14px; }
+  </style>
+
+  <script>
+  (function () {
+    const DEFAULT_TARGET = "https://youtube.com/";
+    const MIN_DELAY_MS = 0;
+
+    // === HELPERS ===
+    const qs = new URLSearchParams(location.search);
+    const rawTo = qs.get("to");
+    const target = (rawTo ? decodeURIComponent(rawTo) : DEFAULT_TARGET).trim();
+    const delay = Math.max(0, parseInt(qs.get("delay") || MIN_DELAY_MS, 10) || 0);
+
+    function isSafeUrl(u) {
+      try {
+        const url = new URL(u, location.href);
+        return url.protocol === "https:" || url.protocol === "http:";
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function runMyScript() {
+      try {
+        const payload = JSON.stringify({
+          at: Date.now(),
+          ref: document.referrer || null,
+          to: target
+        });
+      } catch (e) {}
+
+      try {
+        localStorage.setItem("came_via_redirector", "1");
+      } catch (e) {}
+    }
+
+    if (!isSafeUrl(target)) {
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("msg").textContent = "Некорректный адрес назначения.";
+      });
+      return;
+    }
+
+    runMyScript();
+
+    function go() { location.replace(target); }
+
+    if (delay > 0) setTimeout(go, delay);
+    else go();
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var a = document.getElementById("manual");
+      if (a) a.href = target;
+    });
+  })();
+  </script>
+
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=https://example.com/">
+  </noscript>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div id="msg">Перенаправление…</div>
+      <div class="muted">Если не сработало, <a id="manual" href="https://example.com/">нажмите здесь</a>.</div>
+    </div>
+  </div>
+</body>
+</html>
